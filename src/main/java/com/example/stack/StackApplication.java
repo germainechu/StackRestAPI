@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class StackApplication {
 
-	AtomicReferenceArray<Node<Object>> top = new AtomicReferenceArray<Node<Object>>(100);
+	AtomicReferenceArray<Node<Object>> top = new AtomicReferenceArray<Node<Object>>(10000);
 
 	public static void main(String[] args) {
 		SpringApplication.run(StackApplication.class, args);
