@@ -8,7 +8,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -32,7 +31,7 @@ public class StackApplication {
 		
 	}
 
-	@PutMapping(value = "/stack/{item}")
+	@RequestMapping(value = "/stack/{item}", method = RequestMethod.PUT)
 	public @ResponseBody void push(@PathVariable Object item) {
 		Node<Object> newHead = new Node<Object>(item);
 		Node<Object> oldHead;
