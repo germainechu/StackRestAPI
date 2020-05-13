@@ -7,6 +7,7 @@ import com.example.Stack;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -24,13 +25,19 @@ public class StackApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(StackApplication.class, args);
 	}
-
+	/*
+	** GET on /stack/size returns size of stack
+	*/
 	@RequestMapping(value = "/stack/size", method = RequestMethod.GET)
 	public Stack stack() {
 		return new Stack(size);
 		
 	}
 
+	/*
+	** PUT on /stack/{item} adds {item} to stack
+	** size is incremented accordingly
+	*/
 	@RequestMapping(value = "/stack/{item}", method = RequestMethod.PUT)
 	public @ResponseBody void push(@PathVariable Object item) {
 		Node<Object> newHead = new Node<Object>(item);
@@ -44,9 +51,14 @@ public class StackApplication {
 
 	}
 
+	/*
+	** DELETE on /stack/pop pops top item off stack and returns it
+	** size is decremented accordingly
+	*/
 	@RequestMapping(value = "/stack/pop", method = RequestMethod.DELETE)
+	@ExceptionHandler(ResponseStatusException.class)
 	public @ResponseBody Object pop() {
-		if (size == 0) {
+		if (size <= 0) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 
 		}
@@ -63,6 +75,9 @@ public class StackApplication {
         return oldHead.item;
 	}
 
+	/*
+	** Node Class definition
+	*/
 	private static class Node<E> {
 		public final Object item;
 		public Node<Object> next;

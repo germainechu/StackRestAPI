@@ -1,74 +1,69 @@
 package com.example.stack;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.fail;
 
-import java.io.IOException;
-import java.io.InputStream;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.entity.ContentType;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.junit.BeforeClass;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.web.server.ResponseStatusException;
 
-@SpringBootTest
-@RunWith(JUnit4.class)
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 public class StackApplicationTests {
-	HttpUriRequest request; 
-	HttpResponse response;
 
-	@BeforeClass
-	void contextLoads() throws IOException {
-		//subprocess to open port
-		Runtime.getRuntime().exec(new String[]{"python", "-m", "SimpleHTTPServer", "8080"});
-	}
+	@LocalServerPort
+	private int port;
+
+	@Autowired
+	private TestRestTemplate restTemplate;
 
 	@Test
-	void testGetStackSize_EmptyHappyPath() throws ClientProtocolException, IOException {
-		request = new HttpGet("http://localhost:8080/stack/size");
-		response = HttpClientBuilder.create().build().execute(request);
-		assertEquals(response.getStatusLine().getStatusCode(),
-		(HttpStatus.SC_NOT_FOUND));
+	public void testStackApplication() throws Exception {
+
+		//GET returns 0 on empty stack
+		assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/stack/size", String.class)).isEqualTo("{\"size\":0}");
+
+		//Mutliple PUT, check if GET returns correctly
+		this.restTemplate.put("http://localhost:" + port + "/stack/test", String.class);
+		this.restTemplate.put("http://localhost:" + port + "/stack/test", String.class);
+		assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/stack/size", String.class)).isEqualTo("{\"size\":2}");
+
+		//Multiple PUT then DELETE, check if GET returns correctly
+		this.restTemplate.put("http://localhost:" + port + "/stack/test", String.class);
+		assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/stack/size", String.class)).isEqualTo("{\"size\":3}");
+		this.restTemplate.put("http://localhost:" + port + "/stack/test", String.class);
+		this.restTemplate.put("http://localhost:" + port + "/stack/test", String.class);
+		assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/stack/size", String.class)).isEqualTo("{\"size\":5}");
+		this.restTemplate.delete("http://localhost:" + port + "/stack/pop", String.class);
+		assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/stack/size", String.class)).isEqualTo("{\"size\":4}");
+
+		// Should not catch exception when DELETE is called on non-empty stack
+		try {
+			assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/stack/size", String.class)).isEqualTo("{\"size\":4}");
+			this.restTemplate.delete("http://localhost:" + port + "/stack/pop", String.class);
+			this.restTemplate.delete("http://localhost:" + port + "/stack/pop", String.class);
+			this.restTemplate.delete("http://localhost:" + port + "/stack/pop", String.class);
+			assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/stack/size", String.class)).isEqualTo("{\"size\":1}");
+			this.restTemplate.delete("http://localhost:" + port + "/stack/pop", String.class);
+			assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/stack/size", String.class)).isEqualTo("{\"size\":0}");
+			
+		} catch (RuntimeException e) {
+			fail("Incorrectly caught ResponseStatusException");
+		}
+
+		//Exception handling for when DELETE is called on an empty stack
+		// try {
+		// 	assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/stack/size", String.class)).isEqualTo("{\"size\":0}");
+		// 	this.restTemplate.delete("http://localhost:" + port + "/stack/pop", String.class);
+		// 	fail("Failed to catch ResponseStatusException");
+		// } catch (ResponseStatusException e) {
+		// 	e.printStackTrace();
+
+		// }
 	}
-
-	@Test
-	void testGetStackSize_CheckIfReturningJSON() throws ClientProtocolException, IOException {
-		String jsonMimeType = "text/html";
-		request = new HttpGet("http://localhost:8080/stack/size");
-		response = HttpClientBuilder.create().build().execute(request);
-		String mimeType = ContentType.getLenientOrDefault(response.getEntity()).getMimeType();
-		assertEquals(jsonMimeType, mimeType);
-
-	}
-
-	@Test
-	void testGetStackSize_JSONPayload() throws ClientProtocolException, IOException {
-		request = new HttpPut("http://localhost:8080/stack/test");
-		response = HttpClientBuilder.create().build().execute(request);
-
-	}
-
-	@Test
-	void testMultiplePutOneDelete() {
-
-	}
-
-	@Test
-	void testMultiplePutMultipleDelete() {
-
-	}
-
-	@Test
-	void testDeleteWhenEmpty_ExceptionHandling() {
-
-	}
-
 }
