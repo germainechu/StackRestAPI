@@ -57,13 +57,15 @@ public class StackApplicationTests {
 		}
 
 		//Exception handling for when DELETE is called on an empty stack
-		// try {
-		// 	assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/stack/size", String.class)).isEqualTo("{\"size\":0}");
-		// 	this.restTemplate.delete("http://localhost:" + port + "/stack/pop", String.class);
-		// 	fail("Failed to catch ResponseStatusException");
-		// } catch (ResponseStatusException e) {
-		// 	e.printStackTrace();
+		try {
+			assertThat(this.restTemplate.getForObject("http://localhost:" + port + "/stack/size", String.class)).isEqualTo("{\"size\":0}");
+			this.restTemplate.delete("http://localhost:" + port + "/stack/pop", String.class);
 
-		// }
+			// HandlerExceptionResolver successfully intercepted and processed the ResponseStatusException
+
+		} catch (ResponseStatusException e) {
+			fail("Compiler caught the exception");
+
+		}
 	}
 }
